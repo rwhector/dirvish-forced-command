@@ -1,0 +1,1 @@
+# dirvish-forced-command
