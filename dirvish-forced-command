@@ -1,0 +1,35 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+my $orig = $ENV{SSH_ORIGINAL_COMMAND};
+# eg rsync --server --sender -vlHogDtprx --numeric-ids . /
+
+my $list_file_name = '/usr/local/etc/dirvish-forced-command/default.list';
+open (my $list_file, '<', $list_file_name)
+  or die "Can't open list $list_file_name: $!\n";
+
+my %fs_list;
+while (<$list_file>) {
+    chomp;
+    $fs_list{$_} = 1;
+}
+my ($misc_opts, $dir) = $orig =~ /rsync --server --sender (-vlHogDtpr[^\s]*) --numeric-ids \. (.*)/;
+
+die "Mismatched command\n" unless $dir;
+
+if (exists $fs_list{$dir}) {
+    exec (
+        'rsync',
+        '--server',
+        '--sender',
+        $misc_opts,
+        '--numeric-ids',
+        '.', 
+        $dir,
+    ) or die "couldn't exec rsync: $!\n";
+}
+else {
+    die "Tried to backup an unlisted directory: $dir\n";
+}
+
